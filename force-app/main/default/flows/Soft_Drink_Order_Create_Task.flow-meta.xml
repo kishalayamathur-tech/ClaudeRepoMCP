@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>60.0</apiVersion>
+    <description>Record-triggered flow on Soft_Drink_Order__c. When a new order is created with Status = Open, creates a follow-up Task linked to the order's Account with a due date 4 days from today. Skips gracefully if Account is null.</description>
+    <environments>Default</environments>
+    <customErrors>
+        <name>Task_Creation_Error</name>
+        <label>Task Creation Error</label>
+        <locationX>528</locationX>
+        <locationY>458</locationY>
+        <customErrorMessages>
+            <errorMessage>Failed to create follow-up Task for this Soft Drink Order. Please create it manually or contact your administrator. Error: {!$Flow.FaultMessage}</errorMessage>
+            <isFieldError>false</isFieldError>
+        </customErrorMessages>
+    </customErrors>
+    <decisions>
+        <name>Check_Account_Not_Null</name>
+        <label>Account Not Null?</label>
+        <locationX>176</locationX>
+        <locationY>242</locationY>
+        <defaultConnectorLabel>Account Is Null — Skip</defaultConnectorLabel>
+        <rules>
+            <name>Account_Is_Present</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Account__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Create_Follow_Up_Task</targetReference>
+            </connector>
+            <label>Account Is Present</label>
+        </rules>
+    </decisions>
+    <formulas>
+        <name>DueDateFormula</name>
+        <dataType>Date</dataType>
+        <expression>{!$Flow.CurrentDate} + 4</expression>
+    </formulas>
+    <interviewLabel>Soft Drink Order Create Task {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Soft Drink Order Create Task</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordCreates>
+        <name>Create_Follow_Up_Task</name>
+        <label>Create Follow Up Task</label>
+        <locationX>176</locationX>
+        <locationY>458</locationY>
+        <faultConnector>
+            <targetReference>Task_Creation_Error</targetReference>
+        </faultConnector>
+        <inputAssignments>
+            <field>ActivityDate</field>
+            <value>
+                <elementReference>DueDateFormula</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>OwnerId</field>
+            <value>
+                <elementReference>$User.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Subject</field>
+            <value>
+                <stringValue>Follow up on Soft Drink Order</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>WhatId</field>
+            <value>
+                <elementReference>$Record.Account__c</elementReference>
+            </value>
+        </inputAssignments>
+        <object>Task</object>
+    </recordCreates>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Check_Account_Not_Null</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Status__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>Open</stringValue>
+            </value>
+        </filters>
+        <object>Soft_Drink_Order__c</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>
